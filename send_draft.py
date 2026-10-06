@@ -7,6 +7,7 @@ from app.sources import load_sources
 from app.mail_settings import MailSettings
 from app.mail_ledger import MailLedger
 from app.mailer import send_draft
+from app.resume import resume_path
 
 from app.notifications import action, notify
 
@@ -15,7 +16,7 @@ if __name__ == "__main__":
     parser.add_argument("--draft", required=True, help="JSON with subject and body")
     parser.add_argument("--job-key", required=True, help="Stable posting key from review")
     parser.add_argument("--recipient", help="Verified recipient JSON")
-    parser.add_argument("--resume", required=True, help="Final CV PDF")
+    parser.add_argument("--resume", help="Final CV PDF; defaults to RESUME_PATH or resume.pdf")
     parser.add_argument("--test-to", help="Test destination, must equal SMTP_FROM")
     parser.add_argument("--sources", default="config/sources.json")
     parser.add_argument("--database", default="data/jobs.sqlite3")
@@ -29,7 +30,7 @@ if __name__ == "__main__":
         ledger = MailLedger(args.database)
         try:
             result = send_draft(MailSettings.from_env(), ledger, load_sources(args.sources),
-                                args.job_key, recipient, draft, args.resume, args.test_to)
+                                args.job_key, recipient, draft, resume_path(args.resume), args.test_to)
             notify("email: result", result)
             print(json.dumps(result, ensure_ascii=False, indent=2))
         finally:

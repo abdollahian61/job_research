@@ -3,6 +3,8 @@ services:
     build: .
     env_file:
       - .env
+    environment:
+      RESUME_PATH: /app/resume.pdf
     restart: unless-stopped
     init: true
     read_only: true
@@ -12,6 +14,12 @@ services:
       - job-data:/app/data
       - ./inputs:/app/inputs:ro
       - ./config:/app/config:ro
+      - type: bind
+        source: ${RESUME_FILE:-./resume.pdf}
+        target: /app/resume.pdf
+        read_only: true
+        bind:
+          create_host_path: false
     stop_grace_period: 45s
 
 volumes:

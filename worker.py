@@ -8,10 +8,16 @@ from pathlib import Path
 from threading import Event
 from app.settings import load_env
 from app.notifications import notify
+from app.resume import load_resume_profile
 
 
 def main():
     load_env()
+    try:
+        load_resume_profile()
+    except ValueError:
+        notify("worker: resume PDF validation failed")
+        raise
     interval = int(os.getenv("SEARCH_INTERVAL_SECONDS", "3600"))
     if interval < 60:
         raise ValueError("Search interval must be at least 60 seconds.")

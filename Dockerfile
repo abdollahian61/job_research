@@ -6,5 +6,7 @@ RUN groupadd --gid 10001 app && useradd --uid 10001 --gid app --no-create-home a
 COPY --chown=app:app app/ ./app/
 COPY --chown=app:app config/ ./config/
 COPY --chown=app:app *.py ./
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 USER 10001:10001
 CMD ["python", "worker.py"]

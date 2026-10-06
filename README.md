@@ -13,15 +13,17 @@
 
 ## اجرا
 
-Python 3.10+؛ این مرحله وابستگی خارجی ندارد.
+Python 3.10+؛ برای خواندن PDF وابستگی pypdf را نصب کنید.
 
 ```bash
 cp .env.example .env
-python model_client.py --profile data/profile.json --job data/job.txt
+python -m pip install -r requirements.txt
+# Place your final text PDF here as resume.pdf
+python model_client.py --job data/job.txt
 ```
 
-پوشهٔ data را بسازید؛ profile.json شامل اطلاعات واقعی و تأییدشدهٔ رزومه و
-job.txt متن آگهی باشد. خروجی، JSON دارای subject و body است و ایمیلی ارسال نمی‌شود.
+پوشهٔ data را بسازید؛ job.txt متن آگهی باشد. متن رزومه از resume.pdf خوانده می‌شود؛
+برای استفاده از پروفایل JSON قبلی، --profile data/profile.json را بدهید. خروجی، JSON دارای subject و body است و ایمیلی ارسال نمی‌شود.
 
 ## اتصال به مدل
 
@@ -71,7 +73,7 @@ DAILY_EMAIL_LIMIT و SEND_EMAILS در ماژول ارسال اعمال می‌ش
 
 ```bash
 python source_config.py
-python run_pipeline.py --jobs data/jobs.json --profile data/profile.json
+python run_pipeline.py --jobs data/jobs.json
 ```
 
 jobs.json آرایه‌ای از اشیاء شامل url، title، country، description،
@@ -170,11 +172,13 @@ git clone https://github.com/abdollahian61/job_research.git
 cd job_research
 cp .env.example .env
 mkdir -p inputs
+# Copy your final PDF beside Dockerfile with the name resume.pdf
+chmod 644 resume.pdf
 docker compose build
 ```
 
 .env را با کلید جستجو، آدرس مدل، SMTP و تلگرام تکمیل کنید. فایل‌های ورودی
-مانند رزومهٔ PDF، profile.json و recipient.json را در inputs بگذارید.
+مانند متن آگهی و recipient.json را در inputs بگذارید؛ رزومهٔ PDF کنار Dockerfile قرار می‌گیرد.
 مدل vLLM سرویس جداگانهٔ شماست؛ این Compose مدل یا GPU را راه‌اندازی نمی‌کند.
 LLM_BASE_URL باید از داخل کانتینر قابل دسترسی باشد؛ localhost به خود کانتینر
 اشاره می‌کند، بنابراین IP یا DNS قابل دسترسی سرور مدل را وارد کنید.
@@ -183,8 +187,8 @@ LLM_BASE_URL باید از داخل کانتینر قابل دسترسی باش�
 docker compose up -d
 docker compose logs -f --tail=100
 docker compose run --rm job-research python discover_jobs.py
-docker compose run --rm job-research python model_client.py --profile inputs/profile.json --job inputs/job.txt
-docker compose run --rm job-research python send_draft.py --draft inputs/draft.json --job-key test-001 --resume inputs/resume.pdf --test-to YOUR_OWN_EMAIL
+docker compose run --rm job-research python model_client.py --job inputs/job.txt
+docker compose run --rm job-research python send_draft.py --draft inputs/draft.json --job-key test-001 --test-to YOUR_OWN_EMAIL
 docker compose down
 ```
 
@@ -223,5 +227,37 @@ image نمی‌شوند. تنظیمات جدید .env با ساخت مجدد ک�
 اجرا نمی‌شود؛ اعلان فعلی صف تحویل و retry مستقل ندارد، پس تحویل همهٔ پیام‌ها
 تضمین نمی‌شود. این قابلیت گزارش فعالیت است و دستور یا تأیید از تلگرام نمی‌گیرد.
 
-۱۴ تست آفلاین و بررسی ساختار YAML پاس شده‌اند. این محیط Docker engine ندارد؛
+تست‌های آفلاین با فرمان python -m unittest discover -s tests -v اجرا می‌شوند. این محیط Docker engine ندارد؛
 build/run واقعی تصویر و اتصال زنده به Telegram، SMTP و سرویس مدل هنوز تست نشده‌اند.
+
+## رزومهٔ PDF کنار Dockerfile
+
+فایل نهایی خودتان را با نام ثابت **resume.pdf** در ریشهٔ پروژه، کنار
+Dockerfile و docker-compose.yml قرار دهید. هیچ نسخهٔ رزومه‌ای در مخزن نیست.
+
+- Compose فایل را فقط خواندنی به /app/resume.pdf وصل می‌کند؛ PDF داخل image کپی نمی‌شود.
+- هنگام شروع worker، PDF بررسی می‌شود؛ فایل مفقود، نامعتبر، رمزدار یا بدون متن باعث توقف می‌شود.
+- model_client.py و run_pipeline.py متن PDF را به مدل می‌دهند؛ profile.json دیگر الزامی نیست.
+- send_draft.py همان PDF را پیوست می‌کند؛ --resume همچنان برای مسیر دلخواه قابل استفاده است.
+- PDF باید متن قابل انتخاب، حداکثر ۱۰ MiB و حداکثر ۳۰ صفحه داشته باشد؛ OCR پشتیبانی نمی‌شود.
+- محتوای رزومه در لاگ یا اعلان تلگرام نوشته نمی‌شود. برای تولید متن، به سرویس مدل تنظیم‌شده ارسال می‌شود.
+
+نام یا مسیر فایل روی میزبان را در .env تغییر دهید، مثلاً:
+
+```dotenv
+RESUME_FILE=./Amir_Abdollahian_CV.pdf
+```
+
+RESUME_PATH برای اجرای مستقیم Python است و پیش‌فرض آن resume.pdf است.
+در Compose مسیر داخلی همیشه /app/resume.pdf می‌ماند. فایل برای کاربر کانتینر
+با UID 10001 باید قابل خواندن باشد. فایل‌های PDF و inputs از Git و build context حذف شده‌اند.
+
+پس از جایگزینی رزومه یا تغییر مسیر، کانتینر را دوباره ایجاد کنید؛ rebuild لازم نیست:
+
+```bash
+docker compose up -d --force-recreate
+```
+
+بررسی رزومه در شروع worker، مسیر جستجو تا ارسال را خودکار نمی‌کند؛
+worker فعلاً فقط کشف دوره‌ای آگهی را انجام می‌دهد. تولید پیش‌نویس و ارسال
+با فرمان‌های جداگانهٔ بالا انجام می‌شوند.

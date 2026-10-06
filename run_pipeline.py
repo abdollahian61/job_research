@@ -7,13 +7,16 @@ from app.sources import load_sources
 from app.intake import read_jobs
 from app.storage import JobStore
 from app.orchestrator import Orchestrator
+from app.resume import load_candidate_profile
 
 from app.notifications import action, notify
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--jobs", required=True)
-    parser.add_argument("--profile", required=True)
+    candidate = parser.add_mutually_exclusive_group()
+    candidate.add_argument("--profile", help="Optional verified JSON profile instead of PDF")
+    candidate.add_argument("--resume", help="PDF path; defaults to RESUME_PATH or resume.pdf")
     parser.add_argument("--sources", default="config/sources.json")
     parser.add_argument("--database", default="data/jobs.sqlite3")
     parser.add_argument("--draft-limit", type=int, default=5)
@@ -22,9 +25,7 @@ if __name__ == "__main__":
     with action("run_pipeline"):
         settings = ModelSettings.from_env()
         sources = load_sources(args.sources)
-        profile = json.loads(Path(args.profile).read_text(encoding="utf-8"))
-        if not isinstance(profile, dict) or not profile:
-            raise ValueError("Profile must be a nonempty object with verified CV facts.")
+        profile = load_candidate_profile(args.profile, args.resume)
         store = JobStore(args.database)
         try:
             report = Orchestrator(sources, settings, store, args.draft_limit).run(read_jobs(args.jobs), profile)
