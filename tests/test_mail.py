@@ -1,6 +1,8 @@
 """Offline checks for sending and reservations; never contacts SMTP."""
 import tempfile
 import unittest
+import os
+from unittest.mock import patch
 from dataclasses import replace
 from pathlib import Path
 from app.mail_settings import MailSettings
@@ -10,6 +12,35 @@ from app.sources import load_sources
 
 
 class MailTests(unittest.TestCase):
+    def test_gmail_requires_only_email_and_app_password(self):
+        with patch.dict(os.environ, {"SMTP_USERNAME": "me@gmail.com",
+                                    "SMTP_PASSWORD": "abcd efgh ijkl mnop",
+                                    "SEND_EMAILS": "true"}, clear=True):
+            settings = MailSettings.from_env()
+        self.assertEqual((settings.host, settings.port, settings.tls_mode),
+                         ("smtp.gmail.com", 587, "starttls"))
+        self.assertEqual(settings.sender, "me@gmail.com")
+        self.assertEqual(settings.password, "abcdefghijklmnop")
+        self.assertTrue(settings.enabled)
+
+    def test_old_blank_host_and_sender_use_gmail_defaults(self):
+        with patch.dict(os.environ, {"SMTP_HOST": "", "SMTP_FROM": "",
+                                    "SMTP_USERNAME": "me@gmail.com"}, clear=True):
+            settings = MailSettings.from_env()
+        self.assertEqual(settings.host, "smtp.gmail.com")
+        self.assertEqual(settings.sender, "me@gmail.com")
+        self.assertFalse(settings.enabled)
+
+    def test_other_provider_overrides_are_preserved(self):
+        with patch.dict(os.environ, {"SMTP_HOST": "smtp.example.com", "SMTP_PORT": "465",
+                                    "SMTP_TLS_MODE": "ssl", "SMTP_USERNAME": "login",
+                                    "SMTP_PASSWORD": "keep spaces", "SMTP_FROM": "me@example.com",
+                                    "SEND_EMAILS": "true"}, clear=True):
+            settings = MailSettings.from_env()
+        self.assertEqual(settings.password, "keep spaces")
+        self.assertEqual((settings.host, settings.port, settings.sender),
+                         ("smtp.example.com", 465, "me@example.com"))
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.path = str(Path(self.tmp.name) / "jobs.db")

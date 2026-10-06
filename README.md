@@ -127,17 +127,34 @@ discover_jobs.py فقط نقطهٔ ورود است. تست‌ها بدون شب�
 
 ## ارسال ایمیل و تست
 
-تنظیمات SMTP_HOST، SMTP_PORT، SMTP_TLS_MODE، SMTP_USERNAME، SMTP_PASSWORD
-و SMTP_FROM را در .env روی سرور تنظیم کنید. حالت TLS برابر starttls یا ssl
-است. مقدار SEND_EMAILS=false فقط dry-run است؛ برای ارسال واقعی پس از
-تنظیم حساب، آن را true کنید. کلیدها و رمزها را در چت یا مخزن قرار ندهید.
+پیش‌فرض ارسال Gmail است؛ فقط این دو مقدار را در .env روی سرور وارد کنید:
+
+```dotenv
+SMTP_USERNAME=abdollahian61@gmail.com
+SMTP_PASSWORD=YOUR_GOOGLE_APP_PASSWORD
+```
+
+سرور smtp.gmail.com، پورت 587 و STARTTLS خودکار انتخاب می‌شوند؛ فرستنده
+همان SMTP_USERNAME است. رمز باید **App Password** گوگل باشد، نه رمز اصلی Gmail.
+ابتدا تأیید دومرحله‌ای را فعال کنید و در
+[App Passwords](https://myaccount.google.com/apppasswords) یک رمز برای Job Research بسازید.
+فاصله‌های نمایشی App Password به‌صورت خودکار حذف می‌شوند. بعضی حساب‌های
+سازمانی، دارای Advanced Protection یا تنظیمات خاص ممکن است این گزینه را نداشته باشند.
+
+در .env.example مقدار SEND_EMAILS=true آماده است؛ فرمان send_draft.py واقعاً
+ارسال می‌کند. برای dry-run آن را false کنید. اگر .env قدیمی دارید، مقدار
+SEND_EMAILS=false قبلی را برای ارسال واقعی به true تغییر دهید؛ git pull فایل
+.env شما را تغییر نمی‌دهد. worker هنوز فقط جستجو می‌کند و خودکار ایمیل نمی‌فرستد.
+
+برای سرویس دیگری، SMTP_HOST، SMTP_PORT، SMTP_TLS_MODE و SMTP_FROM قابل
+بازنویسی هستند. کلیدها و رمزها را در چت یا مخزن قرار ندهید.
 
 ```bash
 python send_draft.py --draft data/draft.json --job-key test-001 --resume data/resume.pdf --test-to YOUR_OWN_EMAIL
 python send_draft.py --draft data/draft.json --job-key STABLE_POSTING_KEY --resume data/resume.pdf --recipient data/recipient.json
 ```
 
-برای تست، YOUR_OWN_EMAIL باید دقیقاً همان SMTP_FROM باشد. draft.json دارای
+برای تست، YOUR_OWN_EMAIL باید دقیقاً آدرس فرستنده باشد (پیش‌فرض: SMTP_USERNAME). draft.json دارای
 subject و body است. resume.pdf رزومهٔ نهایی است؛ نمونهٔ رزومه ساخته نشده.
 recipient.json باید شامل email، verified=true، purpose=job_application،
 source_url و source_evidence حاوی ایمیل استخدامی منتشرشده باشد. دامنهٔ
@@ -261,3 +278,18 @@ docker compose up -d --force-recreate
 بررسی رزومه در شروع worker، مسیر جستجو تا ارسال را خودکار نمی‌کند؛
 worker فعلاً فقط کشف دوره‌ای آگهی را انجام می‌دهد. تولید پیش‌نویس و ارسال
 با فرمان‌های جداگانهٔ بالا انجام می‌شوند.
+
+## Gmail SMTP یا Gmail API؟
+
+برای این پروژهٔ شخصی و صرفاً ارسال ایمیل، SMTP با App Password تنظیمات کمتری
+دارد و نیازی به پروژهٔ Google Cloud ندارد. Gmail API هم از همان حساب Gmail
+ارسال می‌کند، ولی به فعال‌سازی API، OAuth client و مدیریت توکن نیاز دارد؛
+API key به‌تنهایی برای ارسال از حساب شخصی کافی نیست. OAuth برای دسترسی با
+مجوزهای مشخص و توسعهٔ قابلیت‌های صندوق ایمیل انتخاب مناسب‌تری است؛ Google
+در صورت امکان Sign in with Google را به App Password ترجیح می‌دهد.
+
+راهنماهای رسمی:
+- https://support.google.com/accounts/answer/185833
+- https://developers.google.com/workspace/gmail/api/quickstart/python
+
+در این تغییر تنها مسیر SMTP آماده شده؛ اتصال واقعی Gmail هنوز تست نشده است.

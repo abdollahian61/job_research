@@ -22,15 +22,22 @@ class MailSettings:
 
     @classmethod
     def from_env(cls):
+        host = os.getenv("SMTP_HOST", "").strip() or "smtp.gmail.com"
+        username = os.getenv("SMTP_USERNAME", "").strip()
+        password = os.getenv("SMTP_PASSWORD", "")
+        # Google displays App Passwords in groups; pasted spaces are not part of it.
+        if host.lower() == "smtp.gmail.com":
+            password = password.replace(" ", "")
         settings = cls(
-            os.getenv("SMTP_HOST", ""), int(os.getenv("SMTP_PORT", "587")),
-            os.getenv("SMTP_USERNAME", ""), os.getenv("SMTP_PASSWORD", ""),
-            os.getenv("SMTP_FROM", ""), os.getenv("SMTP_TLS_MODE", "starttls"),
+            host, int(os.getenv("SMTP_PORT", "").strip() or "587"),
+            username, password,
+            os.getenv("SMTP_FROM", "").strip() or username,
+            os.getenv("SMTP_TLS_MODE", "").strip() or "starttls",
             int(os.getenv("DAILY_EMAIL_LIMIT", "5")),
             os.getenv("SEND_EMAILS", "false").lower() == "true",
         )
         if not valid_email(settings.sender):
-            raise ValueError("Set SMTP_FROM to a valid email address.")
+            raise ValueError("Set SMTP_USERNAME to your Gmail address (or override SMTP_FROM).")
         if settings.daily_limit < 1 or not 1 <= settings.port <= 65535:
             raise ValueError("Invalid SMTP port or daily limit.")
         if settings.tls_mode not in {"starttls", "ssl"}:
