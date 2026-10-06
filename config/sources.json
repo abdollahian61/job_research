@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "target_roles": [
+    "Senior DevOps Engineer",
+    "Senior Platform Engineer",
+    "Senior Site Reliability Engineer",
+    "Senior Infrastructure Engineer"
+  ],
+  "target_countries": [
+    "Netherlands",
+    "Germany",
+    "Spain",
+    "Portugal",
+    "Belgium",
+    "Luxembourg",
+    "United Arab Emirates",
+    "Saudi Arabia",
+    "Qatar",
+    "Oman",
+    "Bahrain",
+    "Kuwait"
+  ],
+  "sources": [
+    {
+      "id": "relocate",
+      "name": "Relocate.me",
+      "url": "https://relocate.me/international-jobs/devops",
+      "enabled": true,
+      "allow_subdomains": false,
+      "purpose": "relocation_job_discovery",
+      "adapter": "pending",
+      "notes": "Verify each live job on employer website; premium listings are not automatically accessible."
+    },
+    {
+      "id": "linkedin",
+      "name": "LinkedIn Jobs",
+      "url": "https://linkedin.com/jobs/",
+      "enabled": true,
+      "allow_subdomains": true,
+      "purpose": "job_discovery",
+      "adapter": "pending",
+      "notes": "Use accessible listings or approved integration; a recruiter profile is not evidence of their email."
+    },
+    {
+      "id": "welcome",
+      "name": "Welcome to the Jungle",
+      "url": "https://welcometothejungle.com/",
+      "enabled": true,
+      "allow_subdomains": true,
+      "purpose": "europe_tech_job_discovery",
+      "adapter": "pending",
+      "notes": "Verify English language and visa/relocation per job."
+    },
+    {
+      "id": "gulf_talent",
+      "name": "GulfTalent",
+      "url": "https://www.gulftalent.com/jobs/title/devops",
+      "enabled": true,
+      "allow_subdomains": false,
+      "purpose": "gulf_job_discovery",
+      "adapter": "pending",
+      "notes": "Verify sponsorship and relocation separately."
+    },
+    {
+      "id": "bayt",
+      "name": "Bayt",
+      "url": "https://www.bayt.com/en/international/jobs/devops-jobs/",
+      "enabled": true,
+      "allow_subdomains": false,
+      "purpose": "middle_east_job_discovery",
+      "adapter": "pending",
+      "notes": "Filter actual role descriptions; search results can include unrelated titles."
+    },
+    {
+      "id": "germany_ba",
+      "name": "Federal Employment Agency",
+      "url": "https://arbeitsagentur.de/jobsuche/",
+      "enabled": true,
+      "allow_subdomains": true,
+      "purpose": "germany_job_discovery",
+      "adapter": "pending",
+      "notes": "Portal language does not determine job working language; verify each posting."
+    }
+  ],
+  "company_sources": [],
+  "contact_policy": {
+    "priority": [
+      "email_explicitly_listed_for_this_vacancy",
+      "official_company_careers_recruitment_email",
+      "official_authorized_recruiter_contact_for_this_vacancy"
+    ],
+    "require_source_url": true,
+    "require_recruitment_purpose": true,
+    "guess_email_addresses": false,
+    "use_generic_support_sales_press_emails": false,
+    "missing_email_action": "record_official_apply_url_or_queue_for_review",
+    "ats_only_action": "record_official_apply_url",
+    "automatic_new_company_domain_approval": false
+  }
+}
