@@ -1,0 +1,18 @@
+services:
+  job-research:
+    build: .
+    env_file:
+      - .env
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - job-data:/app/data
+      - ./inputs:/app/inputs:ro
+      - ./config:/app/config:ro
+    stop_grace_period: 45s
+
+volumes:
+  job-data:
