@@ -293,3 +293,18 @@ API key به‌تنهایی برای ارسال از حساب شخصی کافی 
 - https://developers.google.com/workspace/gmail/api/quickstart/python
 
 در این تغییر تنها مسیر SMTP آماده شده؛ اتصال واقعی Gmail هنوز تست نشده است.
+
+## تست با GitHub Actions
+
+workflow با نام Tests and Docker smoke test در .github/workflows/ci.yml با
+push روی main، Pull Request و اجرای دستی از Actions اجرا می‌شود.
+
+- تست‌های آفلاین روی Python 3.10 و 3.12.
+- اعتبارسنجی Compose، ساخت Docker و اجرای فرمان‌ها داخل کانتینر.
+- خواندن PDF ساختگی و بررسی کاربر غیر root و اتصال فقط خواندنی فایل.
+- بررسی پیش‌فرض‌های Gmail و dry-run ارسال با PDF، بدون اتصال به SMTP.
+- بررسی اینکه PDF داخل image قرار نگرفته است.
+
+این workflow هیچ Secret یا رزومهٔ واقعی لازم ندارد؛ از مدل، Brave، Gmail و
+تلگرام استفادهٔ زنده نمی‌کند. برای اجرای دستی، در Actions همین workflow را
+انتخاب و Run workflow را بزنید. موفقیت آن اتصال واقعی سرویس‌ها را تأیید نمی‌کند.

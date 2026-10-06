@@ -1,0 +1,75 @@
+name: Tests and Docker smoke test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python: ['3.10', '3.12']
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - name: Run offline tests
+        run: python -m unittest discover -s tests -v
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      COMPOSE_PROJECT_NAME: job-research-ci
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - name: Prepare synthetic resume and dry-run settings
+        run: python tests/create_ci_inputs.py
+      - name: Validate Compose and build image
+        run: |
+          docker compose config --quiet
+          docker compose build
+      - name: Check mounted PDF, non-root user and Gmail defaults
+        run: >-
+          docker compose run --rm --no-deps job-research python -c
+          "import os; from app.resume import load_resume_profile;
+          from app.mail_settings import MailSettings;
+          assert os.getuid() == 10001;
+          assert 'Kubernetes' in load_resume_profile()['resume_text'];
+          s = MailSettings.from_env();
+          assert (s.host, s.port, s.sender, s.enabled) == ('smtp.gmail.com', 587, 'ci@example.com', False);
+          assert not os.access('/app/resume.pdf', os.W_OK);
+          print('Container resume and Gmail settings OK')"
+      - name: Smoke test email with PDF attachment in dry-run mode
+        run: >-
+          docker compose run --rm --no-deps job-research python send_draft.py
+          --draft inputs/draft.json --job-key ci-smoke --test-to ci@example.com
+      - name: Verify PDF is excluded from image
+        run: >-
+          docker run --rm --network none job-research-ci-job-research
+          python -c "from pathlib import Path; assert not Path('/app/resume.pdf').exists()"
+      - name: Cleanup
+        if: always()
+        run: docker compose down --volumes --remove-orphans
