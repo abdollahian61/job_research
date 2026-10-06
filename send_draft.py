@@ -8,6 +8,8 @@ from app.mail_settings import MailSettings
 from app.mail_ledger import MailLedger
 from app.mailer import send_draft
 
+from app.notifications import action, notify
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--draft", required=True, help="JSON with subject and body")
@@ -21,12 +23,14 @@ if __name__ == "__main__":
     if not args.recipient and not args.test_to:
         parser.error("--recipient or --test-to is required")
     load_env()
-    draft = json.loads(Path(args.draft).read_text(encoding="utf-8"))
-    recipient = json.loads(Path(args.recipient).read_text(encoding="utf-8")) if args.recipient else {}
-    ledger = MailLedger(args.database)
-    try:
-        result = send_draft(MailSettings.from_env(), ledger, load_sources(args.sources),
-                            args.job_key, recipient, draft, args.resume, args.test_to)
-        print(json.dumps(result, ensure_ascii=False, indent=2))
-    finally:
-        ledger.close()
+    with action("send_draft"):
+        draft = json.loads(Path(args.draft).read_text(encoding="utf-8"))
+        recipient = json.loads(Path(args.recipient).read_text(encoding="utf-8")) if args.recipient else {}
+        ledger = MailLedger(args.database)
+        try:
+            result = send_draft(MailSettings.from_env(), ledger, load_sources(args.sources),
+                                args.job_key, recipient, draft, args.resume, args.test_to)
+            notify("email: result", result)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+        finally:
+            ledger.close()
