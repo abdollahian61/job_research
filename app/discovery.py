@@ -2,6 +2,7 @@
 from .sources import is_allowed_url, host_of
 from .web_fetch import fetch_page
 from .job_parser import parse_jobs
+from .notifications import notify
 
 
 class Discovery:
@@ -56,6 +57,7 @@ class Discovery:
                         self.store.update(key, "review", "Discovered online; verify vacancy, CV fit, language, visa and relocation.")
                         jobs.append(job)
                         report["queued"] += 1
+                        notify("discovery: queued", {"title": job["title"], "url": job["url"]})
                 except Exception as error:
                     report["errors"].append({"url": url, "stage": "fetch_parse",
                                              "error": type(error).__name__})
